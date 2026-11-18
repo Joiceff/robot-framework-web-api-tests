@@ -1,0 +1,36 @@
+name: Robot Framework Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [api, web]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Executar testes (${{ matrix.suite }})
+        run: robot --outputdir results/${{ matrix.suite }} --exitonerror tests/${{ matrix.suite }}
+
+      - name: Publicar relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-report-${{ matrix.suite }}
+          path: results/${{ matrix.suite }}
