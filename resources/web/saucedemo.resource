@@ -34,6 +34,14 @@ Abrir Navegador Na Pagina De Login
     Call Method    ${options}    add_argument    --window-size\=1366,768
     Call Method    ${options}    add_argument    --no-sandbox
     Call Method    ${options}    add_argument    --disable-dev-shm-usage
+    # evita o pop-up de "senha vazada" do Chrome, que bloqueia os cliques após o login
+    Call Method    ${options}    add_argument    --incognito
+    Call Method    ${options}    add_argument    --disable-features\=PasswordLeakDetection
+    ${prefs}=    Create Dictionary
+    ...    credentials_enable_service=${False}
+    ...    profile.password_manager_enabled=${False}
+    ...    profile.password_manager_leak_detection=${False}
+    Call Method    ${options}    add_experimental_option    prefs    ${prefs}
     Open Browser    ${URL}    ${BROWSER}    options=${options}
 
 Fechar Navegador
@@ -48,6 +56,7 @@ Fazer Login
 
 Validar Que Esta Na Pagina De Produtos
     Wait Until Element Contains    ${TITULO_PAGINA}    Products
+    Wait Until Page Contains Element    css=[data-test="inventory-list"]
 
 Validar Mensagem De Erro
     [Arguments]    ${mensagem}
@@ -55,7 +64,10 @@ Validar Mensagem De Erro
 
 Adicionar Produto Ao Carrinho
     [Arguments]    ${id_produto}
+    Wait Until Element Is Enabled    id=add-to-cart-${id_produto}
     Click Button    id=add-to-cart-${id_produto}
+    # confirma que o clique foi processado antes de seguir (o botão vira "Remove")
+    Wait Until Element Is Visible    id=remove-${id_produto}
 
 Validar Quantidade No Carrinho
     [Arguments]    ${quantidade}
@@ -63,6 +75,7 @@ Validar Quantidade No Carrinho
 
 Finalizar Compra
     [Arguments]    ${nome}    ${sobrenome}    ${cep}
+    Wait Until Element Is Visible    ${LINK_CARRINHO}
     Click Element     ${LINK_CARRINHO}
     Wait Until Element Is Visible    ${BOTAO_CHECKOUT}
     Click Button      ${BOTAO_CHECKOUT}
